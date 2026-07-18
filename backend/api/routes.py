@@ -1,14 +1,28 @@
+import os
+from dotenv import load_dotenv
 from fastapi import APIRouter, Request
 from api.schemas import ChatRequest, ChatResponse
 import time
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from openai import OpenAI
+
+env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+load_dotenv(env_path)
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
+client = OpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    base_url=os.getenv("AZURE_OPENAI_ENDPOINT").rstrip("/") + "/openai/v1"
+)
 
 def get_llm_response(question: str) -> str:
-    return f"Mock response to: {question}"
+    response = client.chat.completions.create(
+        model=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+        messages=[{"role": "user", "content": question}]
+    )
+    return response.choices[0].message.content
 
 def call_llm_with_retry(question: str) -> str:
     for attempt in range(3):
