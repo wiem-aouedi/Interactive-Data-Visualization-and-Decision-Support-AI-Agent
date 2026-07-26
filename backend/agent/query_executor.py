@@ -1,7 +1,15 @@
 from database.connections import readonly_engine
 from sqlalchemy import text
 import re
+import logging
+ 
 
+
+logging.basicConfig(
+    filename="query_audit.log",
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
 
 def add_limit_if_missing(sql_query, max_rows=1000):
     if re.search(r'\bLIMIT\b', sql_query, re.IGNORECASE):
@@ -15,8 +23,10 @@ def execute_query(sql_query):
             conn.execute(text("SET statement_timeout = 10000"))
             result = conn.execute(text(sql_query))
             rows = result.fetchall()
+            logging.info(f"Query succeeded| role: readonly_user | sql: {sql_query}")
             return {"success": True, "data": rows, "error": None}
     except Exception as e:
+        logging.error(f"Query failed| role: readonly_user | sql: {sql_query} | error: {e}")
         return {"success": False, "data": None, "error": str(e)}
 
 
