@@ -59,6 +59,22 @@ def run_with_correction(sql_query, correction_function=mock_correct_sql):
     }
 
 
+def format_result_for_user(result):
+    if not result["success"]:
+        return result  # already has a clear error message, nothing to add
+
+    if len(result["data"]) == 0:
+        result["message"] = "No results found for that question. Try rephrasing or asking about a different time period or category."
+        return result
+
+    return result  # has real data, nothing to change
+
+
+
+
+
+
+
 if __name__ == "__main__":
     print("Path 1: succeeds immediately")
     print(run_with_correction("SELECT * FROM products LIMIT 3"))
@@ -82,3 +98,10 @@ if __name__ == "__main__":
     print("\nTest: timeout triggers on a deliberately slow query")
     result = execute_query("SELECT pg_sleep(15)")
     print(result)
+    print("\nTest: format_result_for_user with empty results")
+    empty_result = run_with_correction("SELECT * FROM sales WHERE region = 'Antarctica'")
+    print(format_result_for_user(empty_result))
+
+    print("\nTest: format_result_for_user with real results")
+    real_result = run_with_correction("SELECT * FROM products LIMIT 3")
+    print(format_result_for_user(real_result))
