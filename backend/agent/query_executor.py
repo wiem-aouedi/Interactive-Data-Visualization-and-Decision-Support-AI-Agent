@@ -1,10 +1,18 @@
 from database.connections import readonly_engine
 from sqlalchemy import text
+import re
 
+
+def add_limit_if_missing(sql_query, max_rows=1000):
+    if re.search(r'\bLIMIT\b', sql_query, re.IGNORECASE):
+        return sql_query  # already has one, leave it alone
+    return sql_query.rstrip().rstrip(';') + f" LIMIT {max_rows};"
 
 def execute_query(sql_query):
     try:
-        with readonly_engine.connect() as conn:
+        sql_query = add_limit_if_missing(sql_query)
+        with readonly_engine.connect().execution_options(postgresql_readonly=True) as conn:
+            conn.execute(text("SET statement_timeout = 10000"))
             result = conn.execute(text(sql_query))
             rows = result.fetchall()
             return {"success": True, "data": rows, "error": None}
@@ -63,3 +71,14 @@ if __name__ == "__main__":
         "SELECT nonexistent_column FROM products",
         correction_function=mock_correct_sql_still_broken
     ))
+    print("Test: LIMIT auto-added when missing")
+    print(add_limit_if_missing("SELECT * FROM sales"))
+
+    print("\nTest: LIMIT left untouched when already present")
+    print(add_limit_if_missing("SELECT * FROM products LIMIT 5"))
+    print("\nTest: execute_query respects the auto-added LIMIT")
+    result = execute_query("SELECT * FROM sales")
+    print(f"Rows returned: {len(result['data'])}")
+    print("\nTest: timeout triggers on a deliberately slow query")
+    result = execute_query("SELECT pg_sleep(15)")
+    print(result)
