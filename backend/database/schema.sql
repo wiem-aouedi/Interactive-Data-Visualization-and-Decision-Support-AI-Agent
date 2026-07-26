@@ -40,3 +40,5 @@ CREATE TABLE IF NOT EXISTS sales (
     region VARCHAR(64) NOT NULL,
     employee_id INTEGER REFERENCES employees(id) NOT NULL
 );
+CREATE INDEX idx_sales_product_id ON sales(product_id);
+CREATE INDEX idx_sales_employee_id ON sales(employee_id);
