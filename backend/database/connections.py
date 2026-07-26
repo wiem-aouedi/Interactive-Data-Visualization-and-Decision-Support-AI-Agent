@@ -12,9 +12,9 @@ db_password = os.getenv("DB_PASSWORD")
 readonly_user = os.getenv("READONLY_DB_USER")
 readonly_password = os.getenv("READONLY_DB_PASSWORD")
 db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-engine = create_engine(db_url)
+engine = create_engine(db_url,pool_pre_ping=True)
 readonly_db_url = f"postgresql://{readonly_user}:{readonly_password}@{db_host}:{db_port}/{db_name}"
-readonly_engine = create_engine(readonly_db_url)
+readonly_engine = create_engine(readonly_db_url,pool_pre_ping=True)
 if __name__ == "__main__":
     try:
         connection = engine.connect()

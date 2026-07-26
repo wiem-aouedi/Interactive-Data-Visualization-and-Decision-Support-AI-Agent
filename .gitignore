@@ -4,3 +4,4 @@ node_modules/
 **/__pycache__/
 .vscode/
 query_audit.log
+api_requests.log
