@@ -7,3 +7,5 @@ pydantic
 faker
 slowapi
 openai
+langchain
+langchain-openai
