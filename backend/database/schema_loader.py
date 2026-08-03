@@ -1,11 +1,8 @@
-from connections import engine
+from database.connections import engine
 from sqlalchemy import inspect
-inspector = inspect(engine)
-table_names = inspector.get_table_names()   
-for table in table_names:
-    columns = inspector.get_columns(table)
-    foreign_keys = inspector.get_foreign_keys(table)
 
+inspector = inspect(engine)
+table_names = inspector.get_table_names()
 
 
 def get_schema_description():
@@ -22,5 +19,7 @@ def get_schema_description():
 
         description += "\n"
     return description
-print(get_schema_description())
 
+
+if __name__ == "__main__":
+    print(get_schema_description())
