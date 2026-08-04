@@ -65,3 +65,30 @@ def generate_sql(question: str) -> str:
         "question": question
     })
     return clean_sql_response(response.content)
+
+CORRECTION_SYSTEM_PROMPT = """You are a PostgreSQL expert fixing a broken SQL query.
+
+Database schema:
+{schema}
+
+Rules:
+- Only use the tables, columns, and foreign key relationships listed in the schema above.
+- Return ONLY the corrected raw SQL query. No explanations, no markdown formatting, no code fences.
+- If the query cannot be fixed with the given schema, respond with exactly: NO_QUERY
+"""
+
+correction_prompt_template = ChatPromptTemplate.from_messages([
+    ("system", CORRECTION_SYSTEM_PROMPT),
+    ("human", "Failed SQL query:\n{broken_sql}\n\nDatabase error message:\n{error_message}\n\nFix the query.")
+])
+
+correction_chain = correction_prompt_template | llm
+
+
+def generate_corrected_sql(broken_sql: str, error_message: str) -> str:
+    response = correction_chain.invoke({
+        "schema": SCHEMA_DESCRIPTION,
+        "broken_sql": broken_sql,
+        "error_message": error_message
+    })
+    return clean_sql_response(response.content)

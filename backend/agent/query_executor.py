@@ -1,4 +1,5 @@
 from database.connections import readonly_engine
+from agent.sql_validator import is_safe_query
 from sqlalchemy import text
 import re
 import logging
@@ -50,7 +51,25 @@ def run_with_correction(sql_query, correction_function=mock_correct_sql):
             "error": None
         }
 
-    corrected_query = correction_function(sql_query, result["error"])
+    try:
+        corrected_query = correction_function(sql_query, result["error"])
+    except Exception as e:
+        logging.error(f"Correction attempt raised an exception | original_sql: {sql_query} | error: {e}")
+        return {
+            "success": False,
+            "data": None,
+            "sql_query": sql_query,
+            "error": "I couldn't generate a valid query for that question. Could you try rephrasing it?"
+        }
+
+    if corrected_query == "NO_QUERY" or not is_safe_query(corrected_query):
+        return {
+            "success": False,
+            "data": None,
+            "sql_query": corrected_query,
+            "error": "I couldn't generate a valid query for that question. Could you try rephrasing it?"
+        }
+
     corrected_result = execute_query(corrected_query)
 
     if corrected_result["success"]:
@@ -67,7 +86,6 @@ def run_with_correction(sql_query, correction_function=mock_correct_sql):
         "sql_query": corrected_query,
         "error": "I couldn't generate a valid query for that question. Could you try rephrasing it?"
     }
-
 
 def format_result_for_user(result):
     if not result["success"]:
