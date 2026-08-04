@@ -1,5 +1,8 @@
 import re
+import sqlglot
+from sqlglot import exp 
 
+AUTHORIZED_TABLES = {"products", "employees", "clients", "sales"}
 
 def is_safe_query(sql_query):
     # Define a list of potentially dangerous SQL keywords
@@ -32,6 +35,17 @@ def contains_prompt_injection(question):
             return True
     return False
 
+def uses_only_authorized_tables(sql_query, authorized_tables=AUTHORIZED_TABLES):
+    try:
+        parsed = sqlglot.parse_one(sql_query, dialect="postgres")
+    except Exception:
+        # If it doesn't even parse as valid SQL, treat it as unsafe.
+        return False
+
+    tables_used = {table.name.lower() for table in parsed.find_all(exp.Table)}
+    unauthorized = tables_used - authorized_tables
+
+    return len(unauthorized) == 0
 
 if __name__ == "__main__":
     test_queries = [

@@ -10,3 +10,4 @@ openai
 langchain
 langchain-openai
 langchain-community
+sqlglot

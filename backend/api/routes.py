@@ -6,7 +6,7 @@ from slowapi.util import get_remote_address
 
 from api.schemas import ChatRequest, ChatResponse
 from agent.text_to_sql import generate_sql, generate_corrected_sql
-from agent.sql_validator import is_safe_query, contains_prompt_injection
+from agent.sql_validator import is_safe_query, contains_prompt_injection, uses_only_authorized_tables
 from agent.query_executor import run_with_correction
 
 router = APIRouter()
@@ -50,8 +50,8 @@ def chat(request: Request, chat_request: ChatRequest):
             api_logger.info(f"No query generated | question: {question} | duration: {duration:.2f}s")
             return ChatResponse(message="I couldn't answer that from the available data. Could you rephrase your question?")
 
-        if not is_safe_query(sql_query):
-            api_logger.warning(f"Blocked unsafe SQL | question: {question} | sql: {sql_query}")
+        if not is_safe_query(sql_query) or not uses_only_authorized_tables(sql_query):
+            api_logger.warning(f"Blocked unsafe/unauthorized SQL | question: {question} | sql: {sql_query}")
             return ChatResponse(message="I can't run that query for safety reasons. Please rephrase your question.")
 
         result = run_with_correction(sql_query, correction_function=generate_corrected_sql)

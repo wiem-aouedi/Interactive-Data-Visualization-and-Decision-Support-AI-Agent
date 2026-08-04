@@ -1,5 +1,5 @@
 from database.connections import readonly_engine
-from agent.sql_validator import is_safe_query
+from agent.sql_validator import is_safe_query, uses_only_authorized_tables
 from sqlalchemy import text
 import re
 import logging
@@ -62,7 +62,7 @@ def run_with_correction(sql_query, correction_function=mock_correct_sql):
             "error": "I couldn't generate a valid query for that question. Could you try rephrasing it?"
         }
 
-    if corrected_query == "NO_QUERY" or not is_safe_query(corrected_query):
+    if corrected_query == "NO_QUERY" or not is_safe_query(corrected_query) or not uses_only_authorized_tables(corrected_query):
         return {
             "success": False,
             "data": None,
